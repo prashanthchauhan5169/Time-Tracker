@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#df7b54">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2RmN2I1NCIgcng9IjIwIi8+PHRleHQgeD0iNTAiIHk9IjU1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc2l6ZT0iNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5UWVQ8L3RleHQ+PC9zdmc+">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Track%20Your%20Time%22%2C%22short_name%22%3A%22TYT%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23e4ddd0%22%2C%22theme_color%22%3A%22%23df7b54%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2RmN2I1NCIgcng9IjIwIi8%2BPHRleHQgeD0iNTAiIHk9IjU1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc2l6ZT0iNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5UWVQ8L3RleHQ%2BPC9zdmc%2B%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+    
+    <title>Track Your Time - Premium Productivity Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        :root {
+            --accent-main: #df7b54;
+            --bg-grad: linear-gradient(135deg, #eeeae3 0%, #e4ddd0 100%);
+            --card-bg: #ffffff;
+            --text-main: #2d2d2d;
+            --border-color: rgba(0, 0, 0, 0.04);
+        }
+
+        .dark {
+            --bg-grad: linear-gradient(135deg, #2a2421 0%, #1a1715 100%);
+            --card-bg: #26211e;
+            --text-main: #f5f3f0;
+            --border-color: rgba(255, 255, 255, 0.04);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-grad);
+            color: var(--text-main);
+            min-height: 100vh;
+            transition: all 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        @keyframes softFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .floating-card {
+            background: var(--card-bg);
+            backdrop-filter: none;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.05);
+            animation: softFloat 6s ease-in-out infinite;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .floating-card:hover {
+            animation-play-state: paused;
+            transform: scale(1.01) translateY(-5px);
+            box-shadow: 0 25px 50px rgba(223, 123, 84, 0.08);
+        }
+
+        .dark .floating-card {
+            box-shadow: 0 0 20px rgba(223, 123, 84, 0.1);
+            border-color: rgba(223, 123, 84, 0.2);
+        }
+
+        .dark .floating-card:hover {
+            box-shadow: 0 0 30px rgba(223, 123, 84, 0.25);
+            border-color: rgba(223, 123, 84, 0.35);
+        }
+
+        .delay-1 { animation-delay: 0s; }
+        .delay-2 { animation-delay: 1.2s; }
+        .delay-3 { animation-delay: 2.4s; }
+        .delay-4 { animation-delay: 3.6s; }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+        }
+
+        #time-pet {
+            position: fixed;
+            z-index: 9999;
+            font-size: 4.5rem;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: top 3s cubic-bezier(0.4, 0, 0.2, 1), left 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #pet-emoji {
+            transition: filter 0.5s ease, transform 0.3s ease;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
+            position: relative;
+            display: inline-block;
+        }
+
+        .dark #pet-emoji {
+            filter: drop-shadow(0 0 35px var(--pet-glow-color, rgba(223, 123, 84, 0.85)));
+        }
+
+        /* --- Pet Animations --- */
+        @keyframes cryShake {
+            0%, 100% { transform: rotate(0deg) scale(0.9); }
+            25% { transform: rotate(-15deg) scale(0.9); }
+            75% { transform: rotate(15deg) scale(0.9); }
+        }
+        
+        @keyframes tearDrop {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(30px) scale(0.5); opacity: 0; }
+        }
+
+        .pet-crying {
+            animation: cryShake 0.4s ease-in-out infinite;
+        }
+        
+        .pet-crying::after {
+            content: '💧';
+            position: absolute;
+            font-size: 2.5rem;
+            bottom: -5px;
+            right: -15px;
+            animation: tearDrop 0.8s infinite;
+            z-index: 10;
+        }
+
+        @keyframes smileBounce {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.15) translateY(-10px) rotate(10deg); }
+        }
+        
+        @keyframes sparkleFade {
+            0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+        }
+
+        .pet-smiling {
+            animation: smileBounce 0.8s ease-in-out infinite;
+        }
+
+        .pet-smiling::after {
+            content: '✨';
+            position: absolute;
+            font-size: 2.5rem;
+            top: -10px;
+            right: -15px;
+            animation: sparkleFade 1.2s infinite;
+            z-index: 10;
+        }
+        /* --------------------- */
+
+        .pet-bubble {
+            background: white;
+            color: #2d2d2d;
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            max-width: 160px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            border: 1px solid #f5f3f0;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .btn-active {
+            background: var(--accent-main);
+            color: white;
+            box-shadow: 0 4px 12px rgba(223, 123, 84, 0.3);
+        }
+
+        /* Glass Input Styles */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(223, 123, 84, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .dark .glass-input {
+            background: rgba(45, 39, 36, 0.5);
+        }
+
+        .glass-input:focus {
+            background: white;
+            border-color: var(--accent-main);
+            ring: 2px solid var(--accent-main);
+        }
+
+        /* Ambient Glows */
+        .glow-sky { box-shadow: 0 0 60px rgba(223, 123, 84, 0.1) inset; }
+        .glow-sunset { box-shadow: 0 0 60px rgba(244, 63, 94, 0.1) inset; }
+
+        @keyframes slowSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .sun-icon {
+            width: 56px;
+            height: 56px;
+            animation: slowSpin 24s linear infinite;
+            filter: drop-shadow(0 0 15px rgba(234, 88, 12, 0.5));
+            transition: all 0.5s ease;
+        }
+
+        .moon-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            box-shadow: inset -12px -8px 0 2px #e2e8f0;
+            filter: drop-shadow(0 0 15px rgba(226, 232, 240, 0.4));
+            transform: rotate(-20deg);
+            animation: softFloat 4s ease-in-out infinite alternate;
+            transition: all 0.5s ease;
+        }
+
+        .dark .moon-icon {
+            box-shadow: inset -12px -8px 0 2px #f5f3f0;
+            filter: drop-shadow(0 0 20px rgba(245, 243, 240, 0.6));
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-main); border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- COMPANION -->
+    <div id="time-pet" style="top: 20%; right: 10%;">
+        <div class="pet-bubble" id="pet-message">Ready for today's journey?</div>
+        <span id="pet-emoji">🦊</span>
+    </div>
+
+    <!-- HEADER -->
+    <header class="max-w-7xl mx-auto mb-12">
+        <div class="flex flex-col xl:flex-row justify-between items-center gap-8 bg-white dark:bg-[#26211e] p-8 rounded-[3rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-[var(--border-color)] dark:border-[#df7b54]/20 dark:shadow-[0_0_20px_rgba(223,123,84,0.1)] transition-all duration-500 hover:dark:shadow-[0_0_30px_rgba(223,123,84,0.25)] hover:dark:border-[#df7b54]/40">
+            <div class="flex items-center gap-6">
+                <div id="celestial-container" class="w-14 h-14 flex-shrink-0 flex items-center justify-center"></div>
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-300 tracking-tighter text-gray-900 dark:text-white">TRACK YOUR TIME</h1>
+                    <div class="flex items-center gap-3 mt-3">
+                        <span class="px-4 py-1.5 bg-[#df7b54] text-white rounded-full text-[11px] font-extrabold uppercase tracking-widest">Current Focus</span>
+                        <span id="live-time" class="text-[#df7b54] font-bold text-sm tracking-wide">00:00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-5">
+                <!-- Theme & Sound Environment -->
+                <div class="flex gap-2 p-1.5 bg-white/80 dark:bg-[#352e2a]/80 rounded-[2rem] border border-[#e8e4df] dark:border-[#4a423e]">
+                    <button onclick="toggleTheme()" class="w-11 h-11 flex items-center justify-center text-2xl hover:scale-110 transition bg-white dark:bg-[#2a2421] rounded-full shadow-sm" id="theme-btn">☀️</button>
+                    <button onclick="toggleAmbient('lofi')" class="w-11 h-11 flex items-center justify-center text-xl hover:scale-110 transition" title="Lofi Beats">🎧</button>
+                    <button onclick="toggleAmbient('rain')" class="w-11 h-11 flex items-center justify-center text-xl hover:scale-110 transition" title="Sky Rain">🌧️</button>
+                </div>
+
+                <div class="h-10 w-px bg-[#e8e4df] dark:bg-[#4a423e]"></div>
+
+                <!-- Pet Selection -->
+                <div class="flex items-center gap-2">
+                    <!-- Toggle Button -->
+                    <button onclick="togglePetMenu()" class="w-11 h-11 flex flex-shrink-0 items-center justify-center bg-gray-50 dark:bg-[#352e2a] rounded-full border border-[#e8e4df] dark:border-[#4a423e] text-[#2d2d2d] dark:text-[#f5f3f0] hover:bg-[#df7b54]/10 transition shadow-sm z-10" title="Choose Guardian">
+                        <span id="pet-menu-arrow" class="transition-transform duration-500 transform rotate-0 text-[10px]">▶</span>
+                    </button>
+
+                    <!-- Expanding Menu -->
+                    <div id="pet-menu-items" class="flex items-center gap-1.5 bg-white dark:bg-[#26211e] rounded-[2rem] border-[#e8e4df] dark:border-[#4a423e] transition-all duration-500 overflow-hidden opacity-0 border-0 px-0" style="max-width: 0px;">
+                        <button onclick="changePet('🦊')" title="Fox" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🦊</button>
+                        <button onclick="changePet('🦁')" title="Lion" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🦁</button>
+                        <button onclick="changePet('🐱')" title="Cat" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🐱</button>
+                        <button onclick="changePet('🐶')" title="Dog" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🐶</button>
+                        <button onclick="changePet('🐯')" title="Tiger" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🐯</button>
+                        <button onclick="changePet('🐻')" title="Bear" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🐻</button>
+                        <button onclick="changePet('🦝')" title="Red Panda" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🦝</button>
+                    </div>
+                </div>
+
+                <button onclick="togglePet()" id="pet-toggle-btn" class="px-7 py-3 rounded-[1.5rem] bg-white dark:bg-[#26211e] border border-[#e8e4df] dark:border-[#4a423e] text-[#e65c5c] font-800 text-xs uppercase hover:bg-gray-50 dark:hover:bg-[#352e2a] shadow-sm transition-all tracking-widest">Hide Guardian</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 pb-24">
+        
+        <!-- LEFT: FOCUS & PLANNER -->
+        <div class="lg:col-span-7 space-y-10">
+            
+            <!-- STUDY ZONE -->
+            <div class="floating-card delay-1 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6">
+                    <div>
+                        <h2 class="text-3xl font-800 text-gray-900 dark:text-white">Study Hub</h2>
+                        <p class="text-[11px] font-bold uppercase opacity-50 tracking-[0.2em] text-gray-600 dark:text-gray-400">Peak Performance Timer</p>
+                    </div>
+                    <div id="timer-display" class="text-7xl md:text-8xl font-300 text-[#df7b54] tabular-nums tracking-tighter">25:00</div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <button onclick="startTimer(25)" class="py-4 bg-white dark:bg-[#352e2a] rounded-full shadow-sm text-[#2d2d2d] dark:text-[#f5f3f0] font-800 hover:shadow-md transition-all">25m Work</button>
+                    <button onclick="startTimer(50)" class="py-4 bg-white dark:bg-[#352e2a] rounded-full shadow-sm text-[#2d2d2d] dark:text-[#f5f3f0] font-800 hover:shadow-md transition-all">50m Deep</button>
+                    <button onclick="startTimer(5)" class="py-4 bg-white dark:bg-[#352e2a] rounded-full shadow-sm text-[#669c6d] font-800 hover:shadow-md transition-all">5m Break</button>
+                    <button onclick="stopTimer()" class="py-4 bg-[#df7b54] rounded-full shadow-md text-white font-800 hover:scale-105 transition-all shadow-[#df7b54]/40">Stop</button>
+                </div>
+
+                <div class="relative group">
+                    <input type="text" id="active-goal" placeholder="What are we achieving today?" 
+                           onfocus="petEvacuate()" 
+                           class="w-full p-6 pr-16 rounded-[2rem] glass-input font-400 text-2xl text-[#888] outline-none focus:ring-4 focus:ring-[#df7b54]/20 transition-all">
+                </div>
+            </div>
+
+            <!-- DAILY TIMELINE -->
+            <div class="floating-card delay-2 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-400 text-gray-900 dark:text-white">Today's Journey</h2>
+                    <span id="date-label" class="px-4 py-1.5 bg-gray-100 dark:bg-[#352e2a] text-[#2d2d2d] dark:text-[#ccc] font-bold rounded-full text-xs">Today</span>
+                </div>
+                <div class="space-y-4 max-h-[500px] overflow-y-auto pr-3 custom-scroll" id="timeline-slots"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT: WELLNESS & ANALYTICS -->
+        <div class="lg:col-span-5 space-y-10">
+            
+            <!-- WELLNESS STATION -->
+            <div class="floating-card delay-3 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
+                <h3 class="text-2xl font-800 mb-8 text-gray-900 dark:text-white">Wellness Station</h3>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="p-6 rounded-[2.5rem] bg-[#df7b54]/10 border border-[#df7b54]/20 text-center">
+                        <p class="text-[10px] font-extrabold uppercase text-[#df7b54] mb-3 tracking-widest">Hydration</p>
+                        <div class="text-3xl font-800 text-[#df7b54] mb-4"><span id="water-count">0</span>/8</div>
+                        <button onclick="addWater()" class="w-full py-3 bg-[#df7b54] text-white rounded-[1.2rem] text-xs font-bold shadow-md shadow-[#df7b54]/20 active:scale-95 transition">Drink 💧</button>
+                    </div>
+                    <div class="p-6 rounded-[2.5rem] bg-[#669c6d]/10 border border-[#669c6d]/20 text-center">
+                        <p class="text-[10px] font-extrabold uppercase text-[#669c6d] mb-3 tracking-widest">Eye Rest</p>
+                        <div id="eye-timer" class="text-3xl font-800 text-[#669c6d] mb-4">20:00</div>
+                        <p class="text-[9px] font-bold opacity-60 text-[#4c7a52] uppercase">20-20-20 Rule</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TODAY'S PULSE -->
+            <div class="floating-card delay-4 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-2xl font-800 text-gray-900 dark:text-white">Today's Pulse</h3>
+                    <div class="text-right">
+                        <span id="pulse-pct" class="text-4xl font-800 text-[#df7b54]">0%</span>
+                        <p class="text-[10px] font-extrabold opacity-40 uppercase tracking-widest text-[#2d2d2d] dark:text-[#f5f3f0]">Efficiency</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pulseChart"></canvas>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE TRENDS -->
+            <div class="floating-card delay-1 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                    <h3 class="text-2xl font-800 text-gray-900 dark:text-white">Performance</h3>
+                    <div class="flex bg-gray-100 dark:bg-[#352e2a] p-1.5 rounded-2xl border border-[#e8e4df] dark:border-[#4a423e]">
+                        <button onclick="switchView('day')" id="view-day" class="px-4 py-1.5 text-[10px] font-bold rounded-xl btn-active transition-all">Day</button>
+                        <button onclick="switchView('week')" id="view-week" class="px-4 py-1.5 text-[10px] font-bold rounded-xl opacity-40 hover:opacity-100 transition-all text-[#2d2d2d] dark:text-[#f5f3f0]">Week</button>
+                        <button onclick="switchView('month')" id="view-month" class="px-4 py-1.5 text-[10px] font-bold rounded-xl opacity-40 hover:opacity-100 transition-all text-[#2d2d2d] dark:text-[#f5f3f0]">Month</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+                
+                <div class="mt-8 pt-8 border-t border-[#e8e4df] dark:border-[#4a423e]">
+                    <p class="text-[11px] font-extrabold uppercase text-[#2d2d2d]/60 dark:text-[#f5f3f0]/60 mb-4 tracking-widest text-center">How's your energy?</p>
+                    <input type="range" min="1" max="10" value="7" id="energy-slider" class="w-full h-3 bg-[#e8e4df] dark:bg-[#352e2a] rounded-full appearance-none cursor-pointer accent-[#df7b54]">
+                    <div class="flex justify-between text-[10px] font-800 text-[#2d2d2d]/40 dark:text-[#f5f3f0]/40 mt-3 uppercase tracking-tighter">
+                        <span>Lethargic</span>
+                        <span>Hyper-Focus</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const SLOTS = ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM", "10:00 PM", "11:00 PM"];
+        const ADVICE = [
+            "Take the stairs today! Quick bursts of energy fuel focus.",
+            "The 2-minute rule: If it takes < 2 mins, do it now.",
+            "Visual clutter = mental clutter. Clear one desk corner.",
+            "Your brain peaks 2 hours after waking up. Use it!",
+            "Hydration is non-negotiable. Have a glass now.",
+            "Write down your #1 win for today before starting."
+        ];
+
+        const PET_COLORS = {
+            '🦊': 'rgba(230, 126, 34, 0.85)',   // Orange
+            '🦁': 'rgba(241, 196, 15, 0.85)',   // Gold
+            '🐱': 'rgba(243, 156, 18, 0.85)',   // Yellow-Orange
+            '🐶': 'rgba(141, 110, 99, 0.85)',   // Brown
+            '🐯': 'rgba(255, 179, 0, 0.85)',    // Bright Orange
+            '🐻': 'rgba(121, 85, 72, 0.85)',    // Dark Brown
+            '🦝': 'rgba(158, 158, 158, 0.85)'   // Grey
+        };
+
+        let appData = JSON.parse(localStorage.getItem('tyt_v4_data')) || {};
+        let waterCount = parseInt(localStorage.getItem('tyt_v4_water')) || 0;
+        let isDarkMode = localStorage.getItem('tyt_v4_theme') === 'dark';
+        let currentPet = '🦊';
+        let petVisible = true;
+        let timerInterval, eyeInterval;
+        let pulseChart, trendChart;
+        let ambientMode = null;
+
+        const pet = document.getElementById('time-pet');
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        function init() {
+            if(isDarkMode) document.body.classList.add('dark');
+            document.getElementById('theme-btn').innerText = isDarkMode ? '🌙' : '☀️';
+            document.getElementById('date-label').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            
+            document.documentElement.style.setProperty('--pet-glow-color', PET_COLORS[currentPet] || 'rgba(230, 126, 34, 0.85)');
+
+            updateCelestialIcon();
+            updateLiveTime();
+            setInterval(updateLiveTime, 1000);
+            renderTimeline();
+            initCharts();
+            updateStats();
+            startEyeRestTimer();
+            movePetRandomly();
+            setInterval(movePetRandomly, 12000);
+            
+            document.getElementById('water-count').innerText = waterCount;
+        }
+
+        function updateLiveTime() {
+            const now = new Date();
+            document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark', isDarkMode);
+            document.getElementById('theme-btn').innerText = isDarkMode ? '🌙' : '☀️';
+            localStorage.setItem('tyt_v4_theme', isDarkMode ? 'dark' : 'light');
+            updateChartColors();
+            updateCelestialIcon();
+        }
+
+        function updateCelestialIcon() {
+            const container = document.getElementById('celestial-container');
+            if (isDarkMode) {
+                container.innerHTML = '<div class="moon-icon"></div>';
+            } else {
+                container.innerHTML = `
+                    <svg class="sun-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 2.5L57.5 15.5L72.5 12.5L76.5 27L90.5 33L84.5 46.5L92 60L78 64.5L75 79.5L60.5 75.5L50 88L39.5 75.5L25 79.5L22 64.5L8 60L15.5 46.5L9.5 33L23.5 27L27.5 12.5L42.5 15.5L50 2.5Z" fill="url(#sunGrad)"/>
+                        <circle cx="50" cy="50" r="19" fill="#FFC107"/>
+                        <defs>
+                            <linearGradient id="sunGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FCD34D"/>
+                                <stop offset="1" stop-color="#EA580C"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                `;
+            }
+        }
+
+        function toggleAmbient(mode) {
+            document.body.classList.remove('glow-sky', 'glow-sunset');
+            if(ambientMode === mode) {
+                ambientMode = null;
+                document.getElementById('pet-message').innerText = "Enjoy the silence.";
+            } else {
+                ambientMode = mode;
+                document.body.classList.add('glow-' + (mode === 'rain' ? 'sky' : 'sunset'));
+                document.getElementById('pet-message').innerText = mode === 'rain' ? "I love the sound of rain..." : "Chill vibes only.";
+            }
+        }
+
+        // --- PET AI ---
+        function movePetRandomly() {
+            if (isDragging || !petVisible) return;
+            const x = Math.random() * 80 + 5;
+            const y = Math.random() * 70 + 15;
+            pet.style.left = x + '%';
+            pet.style.top = y + '%';
+            
+            const randomAdvice = ADVICE[Math.floor(Math.random() * ADVICE.length)];
+            document.getElementById('pet-message').innerText = randomAdvice;
+        }
+
+        function petEvacuate() {
+            if (!petVisible) return;
+            pet.style.left = '5%';
+            pet.style.top = '85%';
+            document.getElementById('pet-message').innerText = "Focus on your goal, I'm watching from here!";
+        }
+
+        let emotionTimeout;
+
+        // Double Click - Crying Animation & Running Away
+        pet.addEventListener('dblclick', (e) => {
+            if (!petVisible) return;
+            const petEmoji = document.getElementById('pet-emoji');
+            
+            // Calculate direction to run away from cursor
+            const rect = pet.getBoundingClientRect();
+            const petX = rect.left + rect.width / 2;
+            const petY = rect.top + rect.height / 2;
+            let dx = petX - e.clientX;
+            let dy = petY - e.clientY;
+            
+            // Prevent zero division if perfectly centered
+            if (dx === 0 && dy === 0) { dx = 1; dy = 1; }
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Dart 350px away from the mouse
+            let newX = petX + (dx / dist) * 350;
+            let newY = petY + (dy / dist) * 350;
+            
+            // Keep within screen bounds
+            newX = Math.max(50, Math.min(window.innerWidth - 150, newX));
+            newY = Math.max(50, Math.min(window.innerHeight - 150, newY));
+            
+            // Store original position to come back to later
+            const origLeft = pet.style.left;
+            const origTop = pet.style.top;
+
+            // Apply fast transition to instantly dart away
+            pet.style.transition = "top 0.2s ease-out, left 0.2s ease-out";
+            pet.style.left = newX + 'px';
+            pet.style.top = newY + 'px';
+
+            petEmoji.classList.remove('pet-smiling');
+            petEmoji.classList.add('pet-crying');
+            document.getElementById('pet-message').innerText = "Hey! %#@* you! 🤬😭";
+            
+            clearTimeout(emotionTimeout);
+            emotionTimeout = setTimeout(() => {
+                petEmoji.classList.remove('pet-crying');
+                document.getElementById('pet-message').innerText = "Hmph. Fine, I'm back. 😒";
+                
+                // Restore slow floating transition and come back to original spot
+                pet.style.transition = "top 3s cubic-bezier(0.4, 0, 0.2, 1), left 3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease";
+                pet.style.left = origLeft;
+                pet.style.top = origTop;
+                
+                // Forgive the user after returning
+                setTimeout(() => {
+                    if(!isDragging && document.getElementById('pet-message').innerText.includes("Hmph")) {
+                        document.getElementById('pet-message').innerText = "Okay, let's get back to work.";
+                    }
+                }, 4000);
+            }, 3000);
+        });
+
+        // Mouse Down (Drag) - Smiling/Flying Animation
+        pet.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            dragOffset.x = e.clientX - pet.getBoundingClientRect().left;
+            dragOffset.y = e.clientY - pet.getBoundingClientRect().top;
+            pet.style.transition = "none";
+
+            const petEmoji = document.getElementById('pet-emoji');
+            petEmoji.classList.remove('pet-crying');
+            petEmoji.classList.add('pet-smiling');
+            document.getElementById('pet-message').innerText = "Wheeeee! Flying! ✨";
+            clearTimeout(emotionTimeout);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            pet.style.left = (e.clientX - dragOffset.x) + 'px';
+            pet.style.top = (e.clientY - dragOffset.y) + 'px';
+        });
+
+        // Mouse Up - End Drag
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                pet.style.transition = "top 3s cubic-bezier(0.4, 0, 0.2, 1), left 3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease";
+                
+                const petEmoji = document.getElementById('pet-emoji');
+                petEmoji.classList.remove('pet-smiling');
+                document.getElementById('pet-message').innerText = "That was fun! Let's get back to work.";
+            }
+        });
+
+        let petMenuOpen = false;
+        function togglePetMenu() {
+            petMenuOpen = !petMenuOpen;
+            const menu = document.getElementById('pet-menu-items');
+            const arrow = document.getElementById('pet-menu-arrow');
+            
+            if (petMenuOpen) {
+                menu.style.maxWidth = '400px';
+                menu.classList.remove('opacity-0', 'border-0', 'px-0', 'max-w-0');
+                menu.classList.add('opacity-100', 'border', 'px-1.5', 'p-1.5');
+                arrow.style.transform = "rotate(180deg)";
+            } else {
+                menu.style.maxWidth = '0px';
+                menu.classList.add('opacity-0', 'border-0', 'px-0');
+                menu.classList.remove('opacity-100', 'border', 'px-1.5', 'p-1.5');
+                arrow.style.transform = "rotate(0deg)";
+            }
+        }
+
+        function changePet(emoji) {
+            currentPet = emoji;
+            document.getElementById('pet-emoji').innerText = emoji;
+            
+            const color = PET_COLORS[emoji] || 'rgba(230, 126, 34, 0.85)';
+            document.documentElement.style.setProperty('--pet-glow-color', color);
+
+            if (petMenuOpen) togglePetMenu();
+        }
+
+        function togglePet() {
+            petVisible = !petVisible;
+            pet.style.display = petVisible ? 'flex' : 'none';
+            document.getElementById('pet-toggle-btn').innerText = petVisible ? 'Hide Guardian' : 'Show Guardian';
+        }
+
+        // --- TIMERS ---
+        function startTimer(mins) {
+            clearInterval(timerInterval);
+            let secs = mins * 60;
+            document.getElementById('pet-message').innerText = "Focus Mode: Active. We got this!";
+            document.getElementById('pet-emoji').innerText = '🔥';
+
+            timerInterval = setInterval(() => {
+                secs--;
+                const m = Math.floor(secs / 60);
+                const s = secs % 60;
+                document.getElementById('timer-display').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                
+                if (secs <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('pet-message').innerText = "ALARM! Time to rest those eyes.";
+                    document.getElementById('pet-emoji').innerText = '🔔';
+                    alert("Focus session complete! Take 5 minutes to reset.");
+                    document.getElementById('pet-emoji').innerText = currentPet;
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('timer-display').innerText = "25:00";
+            document.getElementById('pet-emoji').innerText = currentPet;
+        }
+
+        function startEyeRestTimer() {
+            let secs = 1200;
+            eyeInterval = setInterval(() => {
+                secs--;
+                const m = Math.floor(secs / 60);
+                const s = secs % 60;
+                document.getElementById('eye-timer').innerText = `${m}:${s.toString().padStart(2, '0')}`;
+                if(secs <= 0) {
+                    document.getElementById('pet-message').innerText = "Look 20 feet away! Quick eye rest!";
+                    secs = 1200;
+                }
+            }, 1000);
+        }
+
+        function addWater() {
+            waterCount = (waterCount + 1) % 9;
+            document.getElementById('water-count').innerText = waterCount;
+            localStorage.setItem('tyt_v4_water', waterCount);
+            if(waterCount === 8) {
+                document.getElementById('pet-message').innerText = "You're a hydration legend!";
+                document.getElementById('pet-emoji').innerText = '🌟';
+            }
+        }
+
+        // --- DATA & RENDER ---
+        function renderTimeline() {
+            const container = document.getElementById('timeline-slots');
+            container.innerHTML = SLOTS.map(time => {
+                const data = appData[time] || { text: "", done: false };
+                const textDecoration = data.done ? 'line-through opacity-40' : '';
+                return `
+                    <div class="flex items-center gap-5 p-5 rounded-[2rem] bg-gray-50 dark:bg-[#352e2a] border border-transparent hover:border-[#df7b54]/30 transition-all group">
+                        <span class="w-24 text-[10px] font-800 opacity-50 group-hover:opacity-100 transition-opacity uppercase tracking-tighter text-[#2d2d2d] dark:text-[#f5f3f0]">${time}</span>
+                        <input type="text" onfocus="petEvacuate()" onblur="saveTask('${time}', 'text', this.value)" 
+                               value="${data.text}" placeholder="Plan your move..." 
+                               class="flex-grow bg-transparent border-none focus:ring-0 font-bold text-sm text-[#2d2d2d] dark:text-[#f5f3f0] ${textDecoration}">
+                        <input type="checkbox" ${data.done ? 'checked' : ''} onchange="saveTask('${time}', 'done', this.checked)"
+                               class="w-6 h-6 rounded-md border-gray-300 dark:border-gray-600 text-[#007aff] focus:ring-[#007aff] transition-all cursor-pointer">
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function saveTask(time, key, val) {
+            if (!appData[time]) appData[time] = { text: "", done: false };
+            appData[time][key] = val;
+            localStorage.setItem('tyt_v4_data', JSON.stringify(appData));
+            updateStats();
+        }
+
+        function updateStats() {
+            const entries = Object.values(appData).filter(t => t.text.trim());
+            const doneCount = entries.filter(t => t.done).length;
+            const pct = entries.length > 0 ? Math.round((doneCount / entries.length) * 100) : 0;
+            document.getElementById('pulse-pct').innerText = pct + '%';
+            if (pulseChart) {
+                pulseChart.data.datasets[0].data = [doneCount, Math.max(0.1, entries.length - doneCount)];
+                pulseChart.update();
+            }
+        }
+
+        // --- CHARTS ---
+        function initCharts() {
+            const pCtx = document.getElementById('pulseChart').getContext('2d');
+            const tCtx = document.getElementById('trendChart').getContext('2d');
+
+            pulseChart = new Chart(pCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Done', 'Planned'],
+                    datasets: [{
+                        data: [0, 1],
+                        backgroundColor: ['#df7b54', '#f5f3f0'],
+                        borderWidth: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: { cutout: '85%', maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            trendChart = new Chart(tCtx, {
+                type: 'line',
+                data: {
+                    labels: ['08:00', '11:00', '14:00', '17:00', '20:00', '23:00'],
+                    datasets: [
+                        {
+                            label: 'Focus',
+                            data: [50, 75, 40, 85, 60, 45],
+                            borderColor: '#df7b54',
+                            backgroundColor: 'rgba(223, 123, 84, 0.1)',
+                            fill: true,
+                            tension: 0.45,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Energy',
+                            data: [85, 90, 60, 75, 55, 30],
+                            borderColor: '#669c6d',
+                            borderDash: [5, 5],
+                            tension: 0.45,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { display: false, beginAtZero: true },
+                        x: { grid: { display: false }, ticks: { font: { weight: '800', size: 9 }, color: '#df7b54' } }
+                    }
+                }
+            });
+            updateChartColors();
+        }
+
+        function updateChartColors() {
+            const color = isDarkMode ? '#e8a892' : '#2d2d2d';
+            const pulseEmpty = isDarkMode ? '#352e2a' : '#f5f3f0';
+            
+            pulseChart.data.datasets[0].backgroundColor[1] = pulseEmpty;
+            trendChart.options.scales.x.ticks.color = color;
+            
+            pulseChart.update();
+            trendChart.update();
+        }
+
+        function switchView(view) {
+            const views = ['day', 'week', 'month'];
+            views.forEach(v => {
+                document.getElementById('view-' + v).classList.remove('btn-active');
+                document.getElementById('view-' + v).classList.add('opacity-40');
+            });
+            document.getElementById('view-' + view).classList.add('btn-active');
+            document.getElementById('view-' + view).classList.remove('opacity-40');
+
+            if(view === 'day') {
+                trendChart.data.labels = ['08:00', '11:00', '14:00', '17:00', '20:00', '23:00'];
+                trendChart.data.datasets[0].data = [50, 75, 40, 85, 60, 45];
+            } else if(view === 'week') {
+                trendChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                trendChart.data.datasets[0].data = [65, 80, 92, 70, 88, 45, 55];
+            } else {
+                trendChart.data.labels = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'];
+                trendChart.data.datasets[0].data = [72, 78, 85, 94];
+            }
+            trendChart.update();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
