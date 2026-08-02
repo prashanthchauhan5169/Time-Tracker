@@ -8,8 +8,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#df7b54">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2RmN2I1NCIgcng9IjIwIi8+PHRleHQgeD0iNTAiIHk9IjU1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc2l6ZT0iNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5UWVQ8L3RleHQ+PC9zdmc+">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Track%20Your%20Time%22%2C%22short_name%22%3A%22TYT%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23e4ddd0%22%2C%22theme_color%22%3A%22%23df7b54%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2RmN2I1NCIgcng9IjIwIi8%2BPHRleHQgeD0iNTAiIHk9IjU1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc2l6ZT0iNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5UWVQ8L3RleHQ%2BPC9zdmc%2B%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
     
     <title>Track Your Time - Premium Productivity Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -90,6 +90,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            touch-action: none;
             transition: top 3s cubic-bezier(0.4, 0, 0.2, 1), left 3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -104,7 +105,6 @@
             filter: drop-shadow(0 0 35px var(--pet-glow-color, rgba(223, 123, 84, 0.85)));
         }
 
-        /* --- Pet Animations --- */
         @keyframes cryShake {
             0%, 100% { transform: rotate(0deg) scale(0.9); }
             25% { transform: rotate(-15deg) scale(0.9); }
@@ -153,7 +153,6 @@
             animation: sparkleFade 1.2s infinite;
             z-index: 10;
         }
-        /* --------------------- */
 
         .pet-bubble {
             background: white;
@@ -176,7 +175,6 @@
             box-shadow: 0 4px 12px rgba(223, 123, 84, 0.3);
         }
 
-        /* Glass Input Styles */
         .glass-input {
             background: rgba(255, 255, 255, 0.7);
             border: 1px solid rgba(223, 123, 84, 0.15);
@@ -193,7 +191,6 @@
             ring: 2px solid var(--accent-main);
         }
 
-        /* Ambient Glows */
         .glow-sky { box-shadow: 0 0 60px rgba(223, 123, 84, 0.1) inset; }
         .glow-sunset { box-shadow: 0 0 60px rgba(244, 63, 94, 0.1) inset; }
 
@@ -253,7 +250,6 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-center gap-5">
-                <!-- Theme & Sound Environment -->
                 <div class="flex gap-2 p-1.5 bg-white/80 dark:bg-[#352e2a]/80 rounded-[2rem] border border-[#e8e4df] dark:border-[#4a423e]">
                     <button onclick="toggleTheme()" class="w-11 h-11 flex items-center justify-center text-2xl hover:scale-110 transition bg-white dark:bg-[#2a2421] rounded-full shadow-sm" id="theme-btn">☀️</button>
                     <button onclick="toggleAmbient('lofi')" class="w-11 h-11 flex items-center justify-center text-xl hover:scale-110 transition" title="Lofi Beats">🎧</button>
@@ -262,14 +258,11 @@
 
                 <div class="h-10 w-px bg-[#e8e4df] dark:bg-[#4a423e]"></div>
 
-                <!-- Pet Selection -->
                 <div class="flex items-center gap-2">
-                    <!-- Toggle Button -->
                     <button onclick="togglePetMenu()" class="w-11 h-11 flex flex-shrink-0 items-center justify-center bg-gray-50 dark:bg-[#352e2a] rounded-full border border-[#e8e4df] dark:border-[#4a423e] text-[#2d2d2d] dark:text-[#f5f3f0] hover:bg-[#df7b54]/10 transition shadow-sm z-10" title="Choose Guardian">
                         <span id="pet-menu-arrow" class="transition-transform duration-500 transform rotate-0 text-[10px]">▶</span>
                     </button>
 
-                    <!-- Expanding Menu -->
                     <div id="pet-menu-items" class="flex items-center gap-1.5 bg-white dark:bg-[#26211e] rounded-[2rem] border-[#e8e4df] dark:border-[#4a423e] transition-all duration-500 overflow-hidden opacity-0 border-0 px-0" style="max-width: 0px;">
                         <button onclick="changePet('🦊')" title="Fox" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🦊</button>
                         <button onclick="changePet('🦁')" title="Lion" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-xl rounded-full hover:bg-[#df7b54]/20 transition">🦁</button>
@@ -288,10 +281,8 @@
 
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 pb-24">
         
-        <!-- LEFT: FOCUS & PLANNER -->
         <div class="lg:col-span-7 space-y-10">
             
-            <!-- STUDY ZONE -->
             <div class="floating-card delay-1 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6">
                     <div>
@@ -315,7 +306,6 @@
                 </div>
             </div>
 
-            <!-- DAILY TIMELINE -->
             <div class="floating-card delay-2 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
                 <div class="flex justify-between items-center mb-10">
                     <h2 class="text-3xl font-400 text-gray-900 dark:text-white">Today's Journey</h2>
@@ -325,10 +315,8 @@
             </div>
         </div>
 
-        <!-- RIGHT: WELLNESS & ANALYTICS -->
         <div class="lg:col-span-5 space-y-10">
             
-            <!-- WELLNESS STATION -->
             <div class="floating-card delay-3 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
                 <h3 class="text-2xl font-800 mb-8 text-gray-900 dark:text-white">Wellness Station</h3>
                 <div class="grid grid-cols-2 gap-6">
@@ -345,7 +333,6 @@
                 </div>
             </div>
 
-            <!-- TODAY'S PULSE -->
             <div class="floating-card delay-4 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
                 <div class="flex justify-between items-center mb-8">
                     <h3 class="text-2xl font-800 text-gray-900 dark:text-white">Today's Pulse</h3>
@@ -359,7 +346,6 @@
                 </div>
             </div>
 
-            <!-- PERFORMANCE TRENDS -->
             <div class="floating-card delay-1 p-10 rounded-[3.5rem] bg-white dark:bg-[#26211e]">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
                     <h3 class="text-2xl font-800 text-gray-900 dark:text-white">Performance</h3>
@@ -398,19 +384,19 @@
         ];
 
         const PET_COLORS = {
-            '🦊': 'rgba(230, 126, 34, 0.85)',   // Orange
-            '🦁': 'rgba(241, 196, 15, 0.85)',   // Gold
-            '🐱': 'rgba(243, 156, 18, 0.85)',   // Yellow-Orange
-            '🐶': 'rgba(141, 110, 99, 0.85)',   // Brown
-            '🐯': 'rgba(255, 179, 0, 0.85)',    // Bright Orange
-            '🐻': 'rgba(121, 85, 72, 0.85)',    // Dark Brown
-            '🦝': 'rgba(158, 158, 158, 0.85)'   // Grey
+            '🦊': 'rgba(230, 126, 34, 0.85)',
+            '🦁': 'rgba(241, 196, 15, 0.85)',
+            '🐱': 'rgba(243, 156, 18, 0.85)',
+            '🐶': 'rgba(141, 110, 99, 0.85)',
+            '🐯': 'rgba(255, 179, 0, 0.85)',
+            '🐻': 'rgba(121, 85, 72, 0.85)',
+            '🦝': 'rgba(158, 158, 158, 0.85)'
         };
 
         let appData = JSON.parse(localStorage.getItem('tyt_v4_data')) || {};
         let waterCount = parseInt(localStorage.getItem('tyt_v4_water')) || 0;
         let isDarkMode = localStorage.getItem('tyt_v4_theme') === 'dark';
-        let currentPet = '🦊';
+        let currentPet = localStorage.getItem('tyt_v4_pet') || '🦊';
         let petVisible = true;
         let timerInterval, eyeInterval;
         let pulseChart, trendChart;
@@ -419,12 +405,15 @@
         const pet = document.getElementById('time-pet');
         let isDragging = false;
         let dragOffset = { x: 0, y: 0 };
+        let lastTapTime = 0;
 
         function init() {
             if(isDarkMode) document.body.classList.add('dark');
             document.getElementById('theme-btn').innerText = isDarkMode ? '🌙' : '☀️';
             document.getElementById('date-label').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             
+            // Set saved pet icon
+            document.getElementById('pet-emoji').innerText = currentPet;
             document.documentElement.style.setProperty('--pet-glow-color', PET_COLORS[currentPet] || 'rgba(230, 126, 34, 0.85)');
 
             updateCelestialIcon();
@@ -438,6 +427,15 @@
             setInterval(movePetRandomly, 12000);
             
             document.getElementById('water-count').innerText = waterCount;
+
+            // Register Service Worker for absolute offline capabilities
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then((reg) => console.log('Service Worker registered successfully:', reg.scope))
+                        .catch((err) => console.log('Service Worker registration failed:', err));
+                });
+            }
         }
 
         function updateLiveTime() {
@@ -486,7 +484,6 @@
             }
         }
 
-        // --- PET AI ---
         function movePetRandomly() {
             if (isDragging || !petVisible) return;
             const x = Math.random() * 80 + 5;
@@ -507,35 +504,26 @@
 
         let emotionTimeout;
 
-        // Double Click - Crying Animation & Running Away
-        pet.addEventListener('dblclick', (e) => {
-            if (!petVisible) return;
+        function triggerCryReaction(clientX, clientY) {
             const petEmoji = document.getElementById('pet-emoji');
-            
-            // Calculate direction to run away from cursor
             const rect = pet.getBoundingClientRect();
             const petX = rect.left + rect.width / 2;
             const petY = rect.top + rect.height / 2;
-            let dx = petX - e.clientX;
-            let dy = petY - e.clientY;
+            let dx = clientX ? petX - clientX : 50;
+            let dy = clientY ? petY - clientY : 50;
             
-            // Prevent zero division if perfectly centered
             if (dx === 0 && dy === 0) { dx = 1; dy = 1; }
             const dist = Math.sqrt(dx * dx + dy * dy);
             
-            // Dart 350px away from the mouse
             let newX = petX + (dx / dist) * 350;
             let newY = petY + (dy / dist) * 350;
             
-            // Keep within screen bounds
             newX = Math.max(50, Math.min(window.innerWidth - 150, newX));
             newY = Math.max(50, Math.min(window.innerHeight - 150, newY));
             
-            // Store original position to come back to later
             const origLeft = pet.style.left;
             const origTop = pet.style.top;
 
-            // Apply fast transition to instantly dart away
             pet.style.transition = "top 0.2s ease-out, left 0.2s ease-out";
             pet.style.left = newX + 'px';
             pet.style.top = newY + 'px';
@@ -549,25 +537,24 @@
                 petEmoji.classList.remove('pet-crying');
                 document.getElementById('pet-message').innerText = "Hmph. Fine, I'm back. 😒";
                 
-                // Restore slow floating transition and come back to original spot
                 pet.style.transition = "top 3s cubic-bezier(0.4, 0, 0.2, 1), left 3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease";
                 pet.style.left = origLeft;
                 pet.style.top = origTop;
                 
-                // Forgive the user after returning
                 setTimeout(() => {
                     if(!isDragging && document.getElementById('pet-message').innerText.includes("Hmph")) {
                         document.getElementById('pet-message').innerText = "Okay, let's get back to work.";
                     }
                 }, 4000);
             }, 3000);
-        });
+        }
 
-        // Mouse Down (Drag) - Smiling/Flying Animation
-        pet.addEventListener('mousedown', (e) => {
+        // --- UNIFIED MOUSE & TOUCH EVENT HANDLERS FOR MOBILE DRAGGING ---
+        function startDrag(clientX, clientY) {
             isDragging = true;
-            dragOffset.x = e.clientX - pet.getBoundingClientRect().left;
-            dragOffset.y = e.clientY - pet.getBoundingClientRect().top;
+            const rect = pet.getBoundingClientRect();
+            dragOffset.x = clientX - rect.left;
+            dragOffset.y = clientY - rect.top;
             pet.style.transition = "none";
 
             const petEmoji = document.getElementById('pet-emoji');
@@ -575,16 +562,15 @@
             petEmoji.classList.add('pet-smiling');
             document.getElementById('pet-message').innerText = "Wheeeee! Flying! ✨";
             clearTimeout(emotionTimeout);
-        });
+        }
 
-        document.addEventListener('mousemove', (e) => {
+        function onDrag(clientX, clientY) {
             if (!isDragging) return;
-            pet.style.left = (e.clientX - dragOffset.x) + 'px';
-            pet.style.top = (e.clientY - dragOffset.y) + 'px';
-        });
+            pet.style.left = (clientX - dragOffset.x) + 'px';
+            pet.style.top = (clientY - dragOffset.y) + 'px';
+        }
 
-        // Mouse Up - End Drag
-        document.addEventListener('mouseup', () => {
+        function endDrag() {
             if (isDragging) {
                 isDragging = false;
                 pet.style.transition = "top 3s cubic-bezier(0.4, 0, 0.2, 1), left 3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease";
@@ -593,6 +579,50 @@
                 petEmoji.classList.remove('pet-smiling');
                 document.getElementById('pet-message').innerText = "That was fun! Let's get back to work.";
             }
+        }
+
+        // Mouse Events
+        pet.addEventListener('mousedown', (e) => {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastTapTime < 300) {
+                triggerCryReaction(e.clientX, e.clientY);
+            } else {
+                startDrag(e.clientX, e.clientY);
+            }
+            lastTapTime = currentTime;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            onDrag(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', () => {
+            endDrag();
+        });
+
+        // Touch Events for Mobile Support
+        pet.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const currentTime = new Date().getTime();
+                if (currentTime - lastTapTime < 300) {
+                    triggerCryReaction(touch.clientX, touch.clientY);
+                } else {
+                    startDrag(touch.clientX, touch.clientY);
+                }
+                lastTapTime = currentTime;
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                const touch = e.touches[0];
+                onDrag(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            endDrag();
         });
 
         let petMenuOpen = false;
@@ -617,6 +647,7 @@
         function changePet(emoji) {
             currentPet = emoji;
             document.getElementById('pet-emoji').innerText = emoji;
+            localStorage.setItem('tyt_v4_pet', emoji); // Save pet choice so it won't change randomly
             
             const color = PET_COLORS[emoji] || 'rgba(230, 126, 34, 0.85)';
             document.documentElement.style.setProperty('--pet-glow-color', color);
@@ -630,7 +661,6 @@
             document.getElementById('pet-toggle-btn').innerText = petVisible ? 'Hide Guardian' : 'Show Guardian';
         }
 
-        // --- TIMERS ---
         function startTimer(mins) {
             clearInterval(timerInterval);
             let secs = mins * 60;
@@ -683,7 +713,6 @@
             }
         }
 
-        // --- DATA & RENDER ---
         function renderTimeline() {
             const container = document.getElementById('timeline-slots');
             container.innerHTML = SLOTS.map(time => {
@@ -720,7 +749,6 @@
             }
         }
 
-        // --- CHARTS ---
         function initCharts() {
             const pCtx = document.getElementById('pulseChart').getContext('2d');
             const tCtx = document.getElementById('trendChart').getContext('2d');
