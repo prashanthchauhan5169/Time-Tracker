@@ -1,20 +1,37 @@
 {
-  "name": "Track Your Time",
-  "short_name": "TYT",
+  "name": "Track Your Time - Premium Productivity Hub",
+  "short_name": "Track Your Time",
+  "description": "A personal daily planner: timeline tasks, focus timer, energy & water tracking, notes, alarms, and history — all stored locally on your device.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#e4ddd0",
+  "orientation": "portrait-primary",
+  "background_color": "#1a1715",
   "theme_color": "#df7b54",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
