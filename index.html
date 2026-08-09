@@ -8,12 +8,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#df7b54">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192-maskable.png">
     <link rel="manifest" href="manifest.json">
     
     <title>Track Your Time - Premium Productivity Hub</title>
     
-    <!-- Tailwind Configuration -->
     <script>
         tailwind = { 
             config: { 
@@ -37,12 +36,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- External CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="p-4 sm:p-8 md:p-10 relative">
 
-    <!-- GLOBAL SVG GRADIENT -->
     <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
         <defs>
             <linearGradient id="icon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -61,7 +58,7 @@
     </div>
 
     <!-- CALENDAR MODAL -->
-    <div id="calendar-modal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
+    <div id="calendar-modal" class="modal-backdrop hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
         <div class="modal-content app-card rounded-[3rem] p-6 md:p-8 max-w-sm w-full shadow-2xl border-[var(--border-color)]">
             <div class="flex justify-between items-center mb-6">
                 <button onclick="prevMonth()" class="app-subcard w-11 h-11 rounded-full flex items-center justify-center font-800 text-lg hover:bg-[var(--border-color)] hover:scale-105 transition-all shadow-sm">←</button>
@@ -85,7 +82,7 @@
     </div>
 
     <!-- ACTIVE ALARM MODAL -->
-    <div id="active-alarm-modal" class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-lg z-[10000] flex flex-col items-center justify-center p-4">
+    <div id="active-alarm-modal" class="modal-backdrop hidden fixed inset-0 bg-black/80 backdrop-blur-lg z-[10000] flex flex-col items-center justify-center p-4">
         <div class="modal-content app-card rounded-[3rem] p-8 md:p-12 max-w-sm w-full text-center flex flex-col items-center border-[#df7b54]/50" style="border-width: 2px;">
             <div class="text-7xl mb-6 anim-shake inline-block drop-shadow-[0_0_15px_rgba(223,123,84,0.8)]">⏰</div>
             <h2 class="text-3xl font-800 mb-2 text-[#df7b54] tracking-widest uppercase">ALARM</h2>
@@ -98,7 +95,7 @@
     </div>
 
     <!-- SET CUSTOM ALARM MODAL -->
-    <div id="set-alarm-modal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
+    <div id="set-alarm-modal" class="modal-backdrop hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
         <div class="modal-content app-card rounded-[3rem] p-6 md:p-10 max-w-sm w-full">
             <h2 class="text-3xl font-800 mb-6 text-center text-[#df7b54]">Set Alarm</h2>
             <div class="relative flex justify-center items-center gap-2 sm:gap-4 mb-8 bg-black/20 p-4 rounded-[2rem] border border-[var(--border-color)] h-[140px] wheel-container">
@@ -116,7 +113,7 @@
     </div>
 
     <!-- SAVES MODAL -->
-    <div id="notebook-modal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-lg z-[10000] flex flex-col items-center justify-center p-4">
+    <div id="notebook-modal" class="modal-backdrop hidden fixed inset-0 bg-black/60 backdrop-blur-lg z-[10000] flex flex-col items-center justify-center p-4">
         <div class="modal-content app-card relative rounded-[3rem] p-6 md:p-10 w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl">
             <button onclick="closeNotebook()" class="absolute top-6 right-6 md:top-8 md:right-8 app-subcard w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-xl font-bold hover:bg-[#df7b54] hover:text-white transition-all shadow-sm z-50">✕</button>
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-6 pb-6 border-b border-[var(--border-color)] pr-14 md:pr-16">
@@ -136,7 +133,7 @@
     </div>
 
     <!-- END OF DAY MODAL -->
-    <div id="end-of-day-modal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
+    <div id="end-of-day-modal" class="modal-backdrop hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
         <div id="modal-content" class="modal-content app-card rounded-[3rem] p-6 md:p-10 max-w-md w-full">
             <h2 class="text-3xl font-800 mb-2 text-center">Day Complete 🏆</h2>
             <p class="text-center text-muted mb-8 text-sm">Here is your output for today.</p>
@@ -162,7 +159,7 @@
     </div>
 
     <!-- HISTORY PANEL MODAL -->
-    <div id="history-modal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
+    <div id="history-modal" class="modal-backdrop hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
         <div id="history-content" class="modal-content app-card relative rounded-[3rem] p-6 md:p-10 max-w-lg w-full h-[80vh] flex flex-col">
             <button onclick="closeHistory()" class="absolute top-6 right-6 md:top-8 md:right-8 app-subcard w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center text-xl font-bold hover:bg-[#df7b54] hover:text-white transition-all shadow-sm z-50">✕</button>
             <div class="flex flex-row justify-between items-start mb-8 pr-12 md:pr-16">
@@ -187,7 +184,7 @@
     </div>
 
     <!-- SPECIFIC DAY DETAILS MODAL -->
-    <div id="day-details-modal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
+    <div id="day-details-modal" class="modal-backdrop hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
         <div id="day-details-content" class="modal-content app-card rounded-[3rem] p-6 md:p-8 max-w-2xl w-full h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-6">
                 <div class="flex items-center gap-4">
@@ -234,7 +231,7 @@
             </div>
 
             <div class="flex flex-col items-center justify-center gap-4 sm:gap-6 w-full md:w-auto shrink-0 min-w-0">
-                <div class="flex flex-row items-center justify-center gap-3 sm:gap-6 w-full flex-nowrap shrink-0">
+                <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 w-full shrink-0">
                     <button id="pwa-install-btn" onclick="triggerPWAInstall()" class="hidden app-subcard items-center justify-center gap-2 px-5 sm:px-6 h-[52px] rounded-full cursor-pointer transition-all duration-300 hover:scale-105 group hover:shadow-lg shrink-0">
                         <svg class="w-6 h-6 shrink-0 icon-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-4-4m4 4l4-4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"></path></svg>
                         <span class="text-sm font-800 uppercase tracking-widest text-[#df7b54] group-hover:text-[#ffb885] transition-colors whitespace-nowrap">Install App</span>
@@ -435,7 +432,6 @@
         </div>
     </main>
 
-    <!-- External Script -->
     <script src="script.js" defer></script>
 </body>
 </html>

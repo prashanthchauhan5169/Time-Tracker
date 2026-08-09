@@ -1,6 +1,5 @@
 "use strict";
 
-// Set global Chart.js font to match the premium UI
 if(typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 }
@@ -9,7 +8,6 @@ const SLOTS = ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:0
 
 const todayDateString = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
-// --- SAFE DATA HANDLERS ---
 function safeJSONParse(str, fallback) {
     try { return str ? JSON.parse(str) : fallback; }
     catch(e) { console.warn('JSON parse error protected:', e); return fallback; }
@@ -20,7 +18,6 @@ function safeStorageSet(key, val) {
     catch(e) { console.error('Storage full or unavailable:', e); alert('Storage limit reached! Please clear some saves or audio files.'); }
 }
 
-// --- HTML SANITIZATION (Prevents XSS attacks in public use) ---
 function escapeHTML(str) {
     if (!str) return '';
     return String(str)
@@ -31,20 +28,38 @@ function escapeHTML(str) {
         .replace(/'/g, '&#39;');
 }
 
-// --- PWA INSTALL PROMPT & SERVICE WORKER ENGINE ---
+function openModal(id) {
+    const el = document.getElementById(id);
+    if(el) {
+        el.classList.remove('hidden');
+        setTimeout(() => el.classList.add('active'), 10);
+    }
+}
+
+function closeModalById(id) {
+    const el = document.getElementById(id);
+    if(el) {
+        el.classList.remove('active');
+        setTimeout(() => el.classList.add('hidden'), 300);
+    }
+}
+
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     const installBtn = document.getElementById('pwa-install-btn');
-    if (installBtn) installBtn.classList.remove('hidden'), installBtn.classList.add('flex');
+    if (installBtn) {
+        installBtn.classList.remove('hidden');
+        installBtn.classList.add('flex');
+    }
 });
 
 function triggerPWAInstall() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     
     if (isIOS) {
-        alert("iPhone / iPad Installation Instructions:\n\n1. Tap the Share button in Safari (bottom navigation bar).\n2. Scroll down and tap 'Add to Home Screen' 📲.");
+        alert("iPhone / iPad Installation:\n\n1. Tap the Share button below.\n2. Tap 'Add to Home Screen'.");
         return;
     }
 
@@ -53,13 +68,13 @@ function triggerPWAInstall() {
         deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === 'accepted') {
                 showReaction("App installed successfully! 📲", "anim-bounce");
+                const installBtn = document.getElementById('pwa-install-btn');
+                if (installBtn) installBtn.style.display = 'none';
             }
             deferredPrompt = null;
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) installBtn.classList.add('hidden');
         });
     } else {
-        alert("Installation is ready! If you don't see the prompt, open your browser menu and tap 'Install App' or 'Add to Home Screen'.");
+        alert("Installation is not supported or already installed. Check your browser menu for 'Add to Home Screen'.");
     }
 }
 
@@ -85,31 +100,42 @@ if (appDataWrapper) {
     safeStorageSet('tyt_v4_data_daily', JSON.stringify({ date: todayDateString, data: appData }));
 }
 
-let waterCount = parseInt(localStorage.getItem('tyt_v4_water')) || 0;
-let isDarkMode = localStorage.getItem('tyt_v4_theme') === 'dark';
-
-let todayStats = safeJSONParse(localStorage.getItem('tyt_v4_stats'), {
+const DEFAULT_STATS = {
     focusTime: { '08': 0, '11': 0, '14': 0, '17': 0, '20': 0, '23': 0 },
     energyLogs: { '08': 7, '11': 7, '14': 7, '17': 7, '20': 7, '23': 7 },
     totalFocusMins: 0
-});
+};
+
+// FIX: water count and focus/energy stats are per-day values, so they must be
+// wrapped with the same date-check pattern used for appData above. Without this,
+// hydration and focus/energy numbers from a previous day silently carried over
+// into "today", corrupting the Wellness Station, Today's Pulse, and any history
+// entry saved afterwards.
+let waterWrapper = safeJSONParse(localStorage.getItem('tyt_v4_water_daily'), null);
+let waterCount = (waterWrapper && waterWrapper.date === todayDateString) ? (parseInt(waterWrapper.count) || 0) : 0;
+
+let statsWrapper = safeJSONParse(localStorage.getItem('tyt_v4_stats_daily'), null);
+let todayStats = (statsWrapper && statsWrapper.date === todayDateString)
+    ? statsWrapper.stats
+    : JSON.parse(JSON.stringify(DEFAULT_STATS));
+
+let isDarkMode = localStorage.getItem('tyt_v4_theme') === 'dark';
 
 let progressHistory = safeJSONParse(localStorage.getItem('tyt_v4_history'), []);
 let currentOpenHistoryDate = ""; 
-let dayDetailsSource = 'history'; // Tracks if details were opened from 'history' or 'calendar'
+let dayDetailsSource = 'history';
 
-// --- CALENDAR LOGIC ---
 let displayMonthDate = new Date();
 
 function openCalendarModal() {
     closeAllMenus();
     displayMonthDate = new Date(); 
     renderCalendar();
-    document.getElementById('calendar-modal').classList.add('active');
+    openModal('calendar-modal');
 }
 
 function closeCalendarModal() {
-    document.getElementById('calendar-modal').classList.remove('active');
+    closeModalById('calendar-modal');
 }
 
 function prevMonth() {
@@ -181,7 +207,6 @@ function openHistoryDayFromCalendar(dateString) {
     }, 300);
 }
 
-// --- GLOBAL SOUND SYSTEM DECS ---
 let activeAlarmInterval = null;
 let currentCustomAudio = null;
 let currentCustomAudioUrl = null;
@@ -202,8 +227,24 @@ function initAudioContext() {
         audioCtx.resume();
     }
 }
-document.body.addEventListener('click', initAudioContext, { once: true });
-document.body.addEventListener('touchstart', initAudioContext, { once: true, passive: true });
+
+// FIX: Notification permission used to be requested automatically on page load,
+// before any user gesture. Browsers increasingly ignore or auto-dismiss
+// permission prompts that aren't tied to user interaction, and it also just
+// feels intrusive to ask before the visitor has done anything. Now it piggybacks
+// on the same "first click/tap" listeners already used to unlock audio.
+function requestNotificationPermissionOnce() {
+    if ("Notification" in window && Notification.permission !== "denied" && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+}
+
+function handleFirstUserGesture() {
+    initAudioContext();
+    requestNotificationPermissionOnce();
+}
+document.body.addEventListener('click', handleFirstUserGesture, { once: true });
+document.body.addEventListener('touchstart', handleFirstUserGesture, { once: true, passive: true });
 
 const msgToneLabels = { 'pop': 'Msg: Pop', 'chime': 'Msg: Chime', 'none': 'Msg: None 🔕' };
 const alarmToneLabels = { 'classic': 'Alarm: Classic', 'marimba': 'Alarm: Marimba', 'soft': 'Alarm: Gentle', 'urgent': 'Alarm: Urgent' };
@@ -227,6 +268,7 @@ let currentPetEmoji = localStorage.getItem('tyt_v4_pet') || '🐱';
 let timerInterval, eyeInterval;
 let isStopwatchActive = false;
 let stopwatchSecs = 0;
+let currentTimerMins = 25; // remembers which preset (25/50/5) is active so the display resets to the right value
 
 let alarmsList = safeJSONParse(localStorage.getItem('tyt_v4_alarms_list'), []);
 let lastCheckedMinute = -1;
@@ -290,9 +332,12 @@ function createNewNote(specificDate = null) {
     notebook.unshift(newNote); 
     safeStorageSet('tyt_v4_notebook', JSON.stringify(notebook));
     
-    if (document.getElementById('notebook-modal').classList.contains('active')) {
+    const notebookModal = document.getElementById('notebook-modal');
+    const dayDetailsModal = document.getElementById('day-details-modal');
+    
+    if (notebookModal && notebookModal.classList.contains('active')) {
         renderNotebookGrid(document.getElementById('notebook-search').value);
-    } else if (document.getElementById('day-details-modal').classList.contains('active')) {
+    } else if (dayDetailsModal && dayDetailsModal.classList.contains('active')) {
         renderHistoryNotes(currentOpenHistoryDate);
     } else {
         renderActiveNotes();
@@ -309,9 +354,12 @@ function deleteNote(id) {
     notebook = notebook.filter(n => n.id !== id);
     safeStorageSet('tyt_v4_notebook', JSON.stringify(notebook));
     
-    if (document.getElementById('notebook-modal').classList.contains('active')) {
+    const notebookModal = document.getElementById('notebook-modal');
+    const dayDetailsModal = document.getElementById('day-details-modal');
+
+    if (notebookModal && notebookModal.classList.contains('active')) {
         renderNotebookGrid(document.getElementById('notebook-search').value);
-    } else if (document.getElementById('day-details-modal').classList.contains('active')) {
+    } else if (dayDetailsModal && dayDetailsModal.classList.contains('active')) {
         renderHistoryNotes(currentOpenHistoryDate);
     } else {
         renderActiveNotes();
@@ -341,11 +389,11 @@ function renderActiveNotes() {
 function openNotebook() {
     document.getElementById('notebook-search').value = '';
     renderNotebookGrid('');
-    document.getElementById('notebook-modal').classList.add('active');
+    openModal('notebook-modal');
 }
 
 function closeNotebook() {
-    document.getElementById('notebook-modal').classList.remove('active');
+    closeModalById('notebook-modal');
     renderActiveNotes(); 
 }
 
@@ -435,8 +483,8 @@ function renderAlarmDropdown() {
     customAlarmsLibrary.forEach(custom => {
         dropdown.innerHTML += `
             <div class="flex items-center justify-between border-b" style="border-color: var(--border-color);">
-                <button onclick="selectAlarmTone('${custom.id}', '${custom.name}')" class="flex-grow text-left px-4 py-3 text-sm font-800 cursor-pointer hover:opacity-70 truncate">${escapeHTML(custom.name)}</button>
-                <button onclick="deleteCustomAlarm(event, '${custom.id}')" class="px-4 py-3 text-[#e65c5c] font-bold hover:opacity-70 transition-opacity" title="Remove tone">✕</button>
+                <button data-tone-id="${escapeHTML(custom.id)}" data-tone-name="${escapeHTML(custom.name)}" class="js-select-alarm-tone flex-grow text-left px-4 py-3 text-sm font-800 cursor-pointer hover:opacity-70 truncate">${escapeHTML(custom.name)}</button>
+                <button data-tone-id="${escapeHTML(custom.id)}" class="js-delete-alarm-tone px-4 py-3 text-[#e65c5c] font-bold hover:opacity-70 transition-opacity" title="Remove tone">✕</button>
             </div>
         `;
     });
@@ -461,8 +509,8 @@ function renderMsgDropdown() {
     customMessagesLibrary.forEach(custom => {
         dropdown.innerHTML += `
             <div class="flex items-center justify-between border-b" style="border-color: var(--border-color);">
-                <button onclick="selectMsgTone('${custom.id}', '${custom.name}')" class="flex-grow text-left px-4 py-3 text-sm font-800 cursor-pointer hover:opacity-70 truncate">${escapeHTML(custom.name)}</button>
-                <button onclick="deleteCustomMsg(event, '${custom.id}')" class="px-4 py-3 text-[#e65c5c] font-bold hover:opacity-70 transition-opacity" title="Remove tone">✕</button>
+                <button data-tone-id="${escapeHTML(custom.id)}" data-tone-name="${escapeHTML(custom.name)}" class="js-select-msg-tone flex-grow text-left px-4 py-3 text-sm font-800 cursor-pointer hover:opacity-70 truncate">${escapeHTML(custom.name)}</button>
+                <button data-tone-id="${escapeHTML(custom.id)}" class="js-delete-msg-tone px-4 py-3 text-[#e65c5c] font-bold hover:opacity-70 transition-opacity" title="Remove tone">✕</button>
             </div>
         `;
     });
@@ -515,6 +563,10 @@ function updateLiveTime() {
     
     const liveDateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     if (liveDateStr !== todayDateString) {
+        // FIX: previously this reloaded immediately, silently discarding an
+        // in-progress timer/stopwatch session's minutes. Bank the progress
+        // (which also persists it to storage) before reloading for the new day.
+        if (isFocusing) stopTimer();
         window.location.reload(); 
         return;
     }
@@ -609,6 +661,23 @@ document.addEventListener('click', (e) => {
         else if (id === 'day-details-modal') closeDayDetails();
         else if (id === 'calendar-modal') closeCalendarModal();
     }
+
+    // FIX: custom tone buttons used to embed the uploaded file's name directly
+    // inside an inline onclick="..." string. A filename containing a quote
+    // character (e.g. "Kate's Alarm.mp3") broke the handler or could inject
+    // script. Custom tone buttons now carry their data in data-* attributes
+    // (safely HTML-escaped) and are handled here via delegation instead.
+    const selectAlarmBtn = e.target.closest('.js-select-alarm-tone');
+    if (selectAlarmBtn) { selectAlarmTone(selectAlarmBtn.dataset.toneId, selectAlarmBtn.dataset.toneName); return; }
+
+    const deleteAlarmBtn = e.target.closest('.js-delete-alarm-tone');
+    if (deleteAlarmBtn) { deleteCustomAlarm(e, deleteAlarmBtn.dataset.toneId); return; }
+
+    const selectMsgBtn = e.target.closest('.js-select-msg-tone');
+    if (selectMsgBtn) { selectMsgTone(selectMsgBtn.dataset.toneId, selectMsgBtn.dataset.toneName); return; }
+
+    const deleteMsgBtn = e.target.closest('.js-delete-msg-tone');
+    if (deleteMsgBtn) { deleteCustomMsg(e, deleteMsgBtn.dataset.toneId); return; }
 });
 
 function selectMsgTone(val, displayName = 'Custom 🎵') {
@@ -710,11 +779,14 @@ async function deleteCustomAlarm(event, id) {
     renderAlarmDropdown();
 }
 
+// FIX: this used to be split across a 'DOMContentLoaded' listener and a
+// separate init() run via window.onload. window.onload only fires after every
+// image, font, and CDN script has finished loading, which could visibly delay
+// the timeline/notes/charts/alarms appearing (especially on slow connections),
+// even though the DOM itself was ready much earlier. Since script.js loads
+// with `defer`, the DOM is already fully parsed by the time this file runs, so
+// everything is now driven from a single DOMContentLoaded listener.
 document.addEventListener('DOMContentLoaded', () => {
-    if ("Notification" in window && Notification.permission !== "denied" && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
-
     updateLiveTime();
     setInterval(updateLiveTime, 1000);
     
@@ -736,6 +808,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dateLabelBtn) {
         dateLabelBtn.innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     }
+
+    init();
 });
 
 const dbName = "tytDB";
@@ -809,7 +883,6 @@ function init() {
     
     renderActiveNotes(); 
     
-    updateLiveTime();
     renderTimeline();
     renderAlarms();
     try { initCharts(); } catch (e) { console.error("Charts init warning:", e); }
@@ -1152,8 +1225,9 @@ async function handleBackgroundUpload(event) {
 
 function applyCustomBackground(url) {
     if (url) {
-        document.documentElement.style.setProperty('--custom-bg', `url(${url})`);
-        document.documentElement.style.setProperty('--custom-card-bg', 'rgba(42, 36, 33, 0.85)');
+        const overlay = isDarkMode ? 'rgba(26, 23, 21, 0.85), rgba(26, 23, 21, 0.95)' : 'rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.8)';
+        document.documentElement.style.setProperty('--custom-bg', `linear-gradient(${overlay}), url(${url})`);
+        document.documentElement.style.setProperty('--custom-card-bg', isDarkMode ? 'rgba(38, 33, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)');
     } else {
         document.documentElement.style.removeProperty('--custom-bg');
         document.documentElement.style.removeProperty('--custom-card-bg');
@@ -1296,12 +1370,12 @@ function openSetAlarmModal(alarmId = null) {
         setWheelTo('wheel-ampm', ampm);
     }
 
-    document.getElementById('set-alarm-modal').classList.add('active');
+    openModal('set-alarm-modal');
 }
 
 function closeSetAlarmModal() {
     editingAlarmId = null;
-    document.getElementById('set-alarm-modal').classList.remove('active');
+    closeModalById('set-alarm-modal');
 }
 
 function saveCustomAlarmData() {
@@ -1446,6 +1520,7 @@ function startTimer(mins, btnElement) {
     if (btnElement && btnElement.style.background === 'var(--accent-main)') { stopTimer(); return; }
     clearInterval(timerInterval);
     isStopwatchActive = false; 
+    currentTimerMins = mins;
     let secs = mins * 60;
     
     isFocusing = true;
@@ -1519,7 +1594,7 @@ function stopTimer() {
         isStopwatchActive = false;
     }
 
-    document.getElementById('timer-display').innerText = "25:00";
+    document.getElementById('timer-display').innerText = `${currentTimerMins.toString().padStart(2, '0')}:00`;
     document.querySelectorAll('.timer-btn').forEach(b => {
         b.style.background = 'var(--sub-bg)';
         b.style.color = 'var(--text-main)';
@@ -1533,20 +1608,22 @@ function stopTimer() {
 function startEyeRestTimer() {
     let secs = 1200;
     const eyeTimerEl = document.getElementById('eye-timer');
-    const eyeCardEl = eyeTimerEl.parentElement; 
+    const eyeCardEl = eyeTimerEl ? eyeTimerEl.parentElement : null; 
 
     eyeInterval = setInterval(() => {
         secs--;
         const m = Math.floor(secs / 60); const s = secs % 60;
-        eyeTimerEl.innerText = `${m}:${s.toString().padStart(2, '0')}`;
+        if(eyeTimerEl) eyeTimerEl.innerText = `${m}:${s.toString().padStart(2, '0')}`;
         
         if(secs <= 0) {
             triggerAction('eyes');
-            eyeCardEl.style.transition = "background 0.5s ease";
-            eyeCardEl.style.background = 'rgba(102, 156, 109, 0.6)';
-            setTimeout(() => eyeCardEl.style.background = 'rgba(102, 156, 109, 0.1)', 1000);
-            setTimeout(() => eyeCardEl.style.background = 'rgba(102, 156, 109, 0.6)', 2000);
-            setTimeout(() => eyeCardEl.style.background = 'rgba(102, 156, 109, 0.1)', 3000);
+            if(eyeCardEl) {
+                eyeCardEl.style.transition = "background 0.5s ease";
+                eyeCardEl.style.background = 'rgba(102, 156, 109, 0.6)';
+                setTimeout(() => eyeCardEl.style.background = 'rgba(102, 156, 109, 0.1)', 1000);
+                setTimeout(() => eyeCardEl.style.background = 'rgba(102, 156, 109, 0.6)', 2000);
+                setTimeout(() => eyeCardEl.style.background = 'rgba(102, 156, 109, 0.1)', 3000);
+            }
 
             showAlarmModal("👀 20-20-20 Rule: Time to rest your eyes!");
             
@@ -1561,7 +1638,7 @@ function startEyeRestTimer() {
 
 function showAlarmModal(text) {
     document.getElementById('active-alarm-label').innerText = text;
-    document.getElementById('active-alarm-modal').classList.add('active');
+    openModal('active-alarm-modal');
     playAlarmLoop();
     
     if ("Notification" in window && Notification.permission === "granted" && text.includes("Alarm")) {
@@ -1744,7 +1821,7 @@ function stopActiveAlarm(onlySound = false) {
         currentCustomAudio.currentTime = 0;
     }
     if(!onlySound) {
-        document.getElementById('active-alarm-modal').classList.remove('active');
+        closeModalById('active-alarm-modal');
         currentRingingAlarmId = null;
     }
 }
@@ -1752,7 +1829,7 @@ function stopActiveAlarm(onlySound = false) {
 function addWater() {
     waterCount = (waterCount + 1) % 9;
     document.getElementById('water-count').innerText = waterCount;
-    safeStorageSet('tyt_v4_water', waterCount);
+    safeStorageSet('tyt_v4_water_daily', JSON.stringify({ date: todayDateString, count: waterCount }));
     
     if(isAutoEnergy) {
         const currentEnergy = parseFloat(document.getElementById('energy-slider').value);
@@ -1818,7 +1895,7 @@ function getCurrentTimeBlock() {
     if (hour < 23) return '20'; return '23';
 }
 
-function saveStats() { safeStorageSet('tyt_v4_stats', JSON.stringify(todayStats)); }
+function saveStats() { safeStorageSet('tyt_v4_stats_daily', JSON.stringify({ date: todayDateString, stats: todayStats })); }
 
 function openHistory() {
     closeAllMenus();
@@ -1859,10 +1936,10 @@ function openHistory() {
     }
     
     list.appendChild(fragment);
-    document.getElementById('history-modal').classList.add('active');
+    openModal('history-modal');
 }
 
-function closeHistory() { document.getElementById('history-modal').classList.remove('active'); }
+function closeHistory() { closeModalById('history-modal'); }
 
 function openDayDetails(dateString, source = 'history') {
     const record = progressHistory.find(r => r.date === dateString);
@@ -1871,8 +1948,8 @@ function openDayDetails(dateString, source = 'history') {
     dayDetailsSource = source; 
     currentOpenHistoryDate = dateString; 
 
-    if (source === 'history') document.getElementById('history-modal').classList.remove('active');
-    else if (source === 'calendar') document.getElementById('calendar-modal').classList.remove('active');
+    if (source === 'history') closeModalById('history-modal');
+    else if (source === 'calendar') closeModalById('calendar-modal');
     
     document.getElementById('detail-date-title').innerText = record.date;
     document.getElementById('detail-task-pct').innerText = record.taskPct;
@@ -1924,16 +2001,16 @@ function openDayDetails(dateString, source = 'history') {
         detailPulseChart.update();
     }
 
-    setTimeout(() => { document.getElementById('day-details-modal').classList.add('active'); }, 50);
+    setTimeout(() => { openModal('day-details-modal'); }, 50);
 }
 
 function closeDayDetails() {
-    document.getElementById('day-details-modal').classList.remove('active');
+    closeModalById('day-details-modal');
     
     if (dayDetailsSource === 'history') {
-        setTimeout(() => { document.getElementById('history-modal').classList.add('active'); }, 50);
+        setTimeout(() => { openModal('history-modal'); }, 50);
     } else if (dayDetailsSource === 'calendar') {
-        setTimeout(() => { document.getElementById('calendar-modal').classList.add('active'); }, 50);
+        setTimeout(() => { openModal('calendar-modal'); }, 50);
     }
 }
 
@@ -1949,7 +2026,7 @@ function showEndOfDay() {
     document.getElementById('modal-focus-time').innerText = todayStats.totalFocusMins + ' min';
     document.getElementById('modal-avg-energy').innerText = avgEnergy + '/10';
     
-    document.getElementById('end-of-day-modal').classList.add('active');
+    openModal('end-of-day-modal');
 }
 
 function closeModal() {
@@ -1971,10 +2048,10 @@ function closeModal() {
     safeStorageSet('tyt_v4_history', JSON.stringify(progressHistory));
     
     triggerAction('streak');
-    document.getElementById('end-of-day-modal').classList.remove('active');
+    closeModalById('end-of-day-modal');
 }
 
-function cancelModal() { document.getElementById('end-of-day-modal').classList.remove('active'); }
+function cancelModal() { closeModalById('end-of-day-modal'); }
 
 function exportData() {
     const dataToExport = {};
@@ -2088,6 +2165,62 @@ function updateTrendChart() {
     }
 }
 
+// Builds a chronological list of {date, focusMins, avgEnergy} from real saved
+// history, plus today's live (not-yet-saved) numbers if today hasn't been
+// "wrapped up" yet. Used by the Week/Month performance views below.
+function getHistoryWithToday() {
+    const combined = progressHistory.map(r => ({
+        date: r.date,
+        focusMins: parseInt(r.focusTime) || 0,
+        avgEnergy: parseFloat(r.avgEnergy) || 0
+    }));
+
+    const alreadyLogged = combined.some(r => r.date === todayDateString);
+    if (!alreadyLogged) {
+        const energies = Object.values(todayStats.energyLogs);
+        const liveAvgEnergy = energies.length ? (energies.reduce((a, b) => a + b, 0) / energies.length) : 0;
+        combined.push({ date: todayDateString, focusMins: todayStats.totalFocusMins || 0, avgEnergy: liveAvgEnergy });
+    }
+
+    combined.sort((a, b) => {
+        const da = new Date(a.date).getTime();
+        const db = new Date(b.date).getTime();
+        if (isNaN(da) || isNaN(db)) return 0;
+        return da - db;
+    });
+
+    return combined;
+}
+
+function getWeekPerformanceData() {
+    const days = getHistoryWithToday().slice(-7);
+    return {
+        labels: days.map(d => (d.date.split(',')[0] || d.date).trim()),
+        focusData: days.map(d => d.focusMins),
+        energyData: days.map(d => Math.round(d.avgEnergy * 10))
+    };
+}
+
+function getMonthPerformanceData() {
+    const days = getHistoryWithToday().slice(-28);
+    if (days.length === 0) {
+        return { labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'], focusData: [0, 0, 0, 0], energyData: [0, 0, 0, 0] };
+    }
+    const bucketCount = Math.min(4, Math.ceil(days.length / 7));
+    const bucketSize = Math.ceil(days.length / bucketCount);
+    const labels = [], focusData = [], energyData = [];
+    for (let i = 0; i < bucketCount; i++) {
+        const bucket = days.slice(i * bucketSize, (i + 1) * bucketSize);
+        if (bucket.length === 0) continue;
+        const totalFocus = bucket.reduce((sum, d) => sum + d.focusMins, 0);
+        const avgEnergy = bucket.reduce((sum, d) => sum + d.avgEnergy, 0) / bucket.length;
+        labels.push(`Wk ${i + 1}`);
+        focusData.push(totalFocus);
+        energyData.push(Math.round(avgEnergy * 10));
+    }
+    return { labels, focusData, energyData };
+}
+
 function switchView(view) {
     if (!trendChart) return;
     const views = ['day', 'week', 'month'];
@@ -2102,16 +2235,16 @@ function switchView(view) {
         trendChart.data.labels = ['08:00', '11:00', '14:00', '17:00', '20:00', '23:00'];
         updateTrendChart(); 
     } else if(view === 'week') {
-        trendChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        trendChart.data.datasets[0].data = [65, 80, 92, 70, 88, 45, 55]; 
-        trendChart.data.datasets[1].data = [75, 85, 90, 75, 80, 50, 60];
+        const { labels, focusData, energyData } = getWeekPerformanceData();
+        trendChart.data.labels = labels;
+        trendChart.data.datasets[0].data = focusData;
+        trendChart.data.datasets[1].data = energyData;
         trendChart.update();
     } else {
-        trendChart.data.labels = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'];
-        trendChart.data.datasets[0].data = [72, 78, 85, 94]; 
-        trendChart.data.datasets[1].data = [80, 82, 88, 90];
+        const { labels, focusData, energyData } = getMonthPerformanceData();
+        trendChart.data.labels = labels;
+        trendChart.data.datasets[0].data = focusData;
+        trendChart.data.datasets[1].data = energyData;
         trendChart.update();
     }
 }
-
-window.onload = init;
