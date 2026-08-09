@@ -1,9 +1,12 @@
 {
+  "id": "./",
   "name": "Track Your Time",
   "short_name": "TYT",
   "description": "Premium Productivity Hub",
   "start_url": "./index.html",
+  "scope": ".",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#1a1715",
   "theme_color": "#df7b54",
   "icons": [

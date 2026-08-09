@@ -139,11 +139,13 @@ function closeCalendarModal() {
 }
 
 function prevMonth() {
+    displayMonthDate.setDate(1);
     displayMonthDate.setMonth(displayMonthDate.getMonth() - 1);
     renderCalendar();
 }
 
 function nextMonth() {
+    displayMonthDate.setDate(1);
     displayMonthDate.setMonth(displayMonthDate.getMonth() + 1);
     renderCalendar();
 }
@@ -213,6 +215,7 @@ let currentCustomAudioUrl = null;
 let currentMessageAudio = null;
 let currentMessageAudioUrl = null;
 let audioCtx = null;
+let currentBgObjectUrl = null;
 let currentRingingAlarmId = null; 
 
 let customAlarmsLibrary = safeJSONParse(localStorage.getItem('tyt_v4_custom_alarms'), []);
@@ -405,7 +408,7 @@ function renderNotebookGrid(query) {
     const container = document.getElementById('notebook-grid');
     container.innerHTML = '';
     
-    let filtered = notebook.sort((a,b) => b.timestamp - a.timestamp);
+    let filtered = notebook.slice().sort((a,b) => b.timestamp - a.timestamp);
     if (query.trim() !== '') {
         const q = query.toLowerCase();
         filtered = filtered.filter(n => n.text.toLowerCase().includes(q) || n.dateString.toLowerCase().includes(q) || (n.title && n.title.toLowerCase().includes(q)));
@@ -847,7 +850,7 @@ async function saveBg(blob) {
 
 async function loadBg() {
     const db = await initDB();
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const tx = db.transaction('bgStore', 'readonly');
         const store = tx.objectStore('bgStore');
         const req = store.get('customBgBlob');
@@ -863,6 +866,7 @@ async function clearBg() {
         const store = tx.objectStore('bgStore');
         const req = store.delete('customBgBlob');
         req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
     });
 }
 
@@ -1224,11 +1228,16 @@ async function handleBackgroundUpload(event) {
 }
 
 function applyCustomBackground(url) {
+    if (currentBgObjectUrl && currentBgObjectUrl !== url) {
+        URL.revokeObjectURL(currentBgObjectUrl);
+    }
+    currentBgObjectUrl = url;
     if (url) {
         const overlay = isDarkMode ? 'rgba(26, 23, 21, 0.85), rgba(26, 23, 21, 0.95)' : 'rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.8)';
         document.documentElement.style.setProperty('--custom-bg', `linear-gradient(${overlay}), url(${url})`);
         document.documentElement.style.setProperty('--custom-card-bg', isDarkMode ? 'rgba(38, 33, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)');
     } else {
+        currentBgObjectUrl = null;
         document.documentElement.style.removeProperty('--custom-bg');
         document.documentElement.style.removeProperty('--custom-card-bg');
     }
@@ -1606,6 +1615,7 @@ function stopTimer() {
 }
 
 function startEyeRestTimer() {
+    if (eyeInterval) clearInterval(eyeInterval);
     let secs = 1200;
     const eyeTimerEl = document.getElementById('eye-timer');
     const eyeCardEl = eyeTimerEl ? eyeTimerEl.parentElement : null; 
@@ -1665,11 +1675,11 @@ function playMessageTone() {
                     if(currentMessageAudio) currentMessageAudio.pause();
                     
                     currentMessageAudio = new Audio(currentMessageAudioUrl);
-                    currentMessageAudio.play();
+                    currentMessageAudio.play().catch(() => {});
                 } else {
                     startSynthMessage('pop');
                 }
-            }
+            };
             req.onerror = () => startSynthMessage('pop');
         }).catch(() => startSynthMessage('pop'));
         return;
@@ -1722,11 +1732,11 @@ function playAlarmLoop() {
                     
                     currentCustomAudio = new Audio(currentCustomAudioUrl);
                     currentCustomAudio.loop = true; 
-                    currentCustomAudio.play();
+                    currentCustomAudio.play().catch(() => {});
                 } else {
                     startSynthLoop('classic');
                 }
-            }
+            };
             req.onerror = () => startSynthLoop('classic');
         }).catch(() => startSynthLoop('classic'));
         return;
@@ -1827,7 +1837,7 @@ function stopActiveAlarm(onlySound = false) {
 }
 
 function addWater() {
-    waterCount = (waterCount + 1) % 9;
+    waterCount = Math.min(waterCount + 1, 8);
     document.getElementById('water-count').innerText = waterCount;
     safeStorageSet('tyt_v4_water_daily', JSON.stringify({ date: todayDateString, count: waterCount }));
     
@@ -1846,6 +1856,7 @@ function addWater() {
 function renderTimeline() {
     const container = document.getElementById('timeline-slots');
     if (!container) return;
+    container.innerHTML = '';
     const frag = document.createDocumentFragment();
     SLOTS.forEach(time => {
         const data = appData[time] || { text: "", done: false };
@@ -1877,7 +1888,7 @@ function saveTask(time, key, val) {
 }
 
 function updateStats() {
-    const entries = Object.values(appData).filter(t => t.text.trim());
+    const entries = Object.values(appData).filter(t => t && typeof t.text === 'string' && t.text.trim());
     const doneCount = entries.filter(t => t.done).length;
     const pct = entries.length > 0 ? Math.round((doneCount / entries.length) * 100) : 0;
     const pulsePct = document.getElementById('pulse-pct');
@@ -1916,7 +1927,7 @@ function openHistory() {
             item.className = "app-subcard p-5 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-95 transition-transform duration-300";
             item.onclick = () => openDayDetails(record.date, 'history');
             
-            const notesCount = notebook.filter(n => n.dateString === record.date && (n.text.trim() !== "" || n.title.trim() !== "")).length;
+            const notesCount = notebook.filter(n => n.dateString === record.date && ((n.text && n.text.trim() !== "") || (n.title && n.title.trim() !== ""))).length;
             const hasNotesIcon = notesCount > 0 ? `<span title="Contains Notes" class="text-xs font-bold text-[#df7b54] ml-1 bg-[#df7b54]/20 px-2 py-0.5 rounded-full">📝 ${notesCount}</span>` : "";
 
             item.innerHTML = `

@@ -17,7 +17,9 @@ const CORE_ASSETS = [
     './script.js',
     './manifest.json',
     './icon-192.png',
-    './icon-512.png'
+    './icon-512.png',
+    './icon-192-maskable.png',
+    './icon-512-maskable.png'
 ];
 
 // Third-party libraries the app depends on. Cached opportunistically so the
@@ -81,8 +83,9 @@ self.addEventListener('fetch', (event) => {
                 if (res && res.ok) {
                     const copy = res.clone();
                     caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
+                    return res;
                 }
-                return res;
+                return caches.match(request).then((cached) => cached || res);
             }).catch(() =>
                 caches.match(request).then((cached) => cached || caches.match('./index.html'))
             )

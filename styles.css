@@ -92,6 +92,7 @@ h1, h2, h3, p, span, div, input, button, textarea { color: inherit; }
 .text-muted { color: var(--text-muted) !important; }
 input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 0.8; }
 input, textarea { user-select: auto; }
+.app-card, .modal-content, .pet-bubble { user-select: text; -webkit-user-select: text; }
 
 @keyframes softFloat {
     0%, 100% { transform: translateY(0px); }
